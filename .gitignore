@@ -1,0 +1,22 @@
+# Eclipse specific files
+.classpath
+.project
+.settings/
+
+# Maven specific files
+target/
+
+# Java specific files
+*.class
+*.log
+*.war
+*.ear
+*.jar
+*.iml
+
+# Mac specific files
+.DS_Store
+
+# Windows specific files
+Thumbs.db
+*.tmp
