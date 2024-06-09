@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<style>
+		table {
+			width: 100%;
+		}
+		th, td {
+			border: solid 1px #000;
+		}
+	</style>
+	
+    <!-- jQuery 라이브러리 포함 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    
+</head>
+
+<body>
+	<h2>와이파이 정보 구하기</h2>
+	<div id="condition_tag"></div>
+	
+	<form>
+        <label for="_lat">LAT :</label>
+        <input type="number" id="lat" name="lat">
+        <label for="_lnt">, LNT :</label>
+        <input type="number" id="lnt" name="lnt">
+        <input type="button" value="내 위치 가져오기" id="search_mylocation">
+        <input type="button" value="근처 WIFI 정보 보기" id="search_wifi_info">
+    </form>
+	
+	<table>
+		<thead style="background-color:#00AC6F">
+			<tr>
+				<th>거리(Km)</th>
+				<th>관리번호</th>
+				<th>자치구</th>
+				<th>와이파이명 </th>
+				<th>도로명주소</th>
+				<th>상세주소</th>
+				<th>설치위치(층)</th>
+				<th>설치유형</th>
+				<th>설치기관</th>
+				<th>서비스구분</th>
+				<th>망종류</th>
+				<th>설치년도</th>
+				<th>실내외구분</th>
+				<th>WIFI접속환경</th>
+				<th>X좌표</th>
+				<th>Y좌표</th>
+				<th>작업일자</th>
+			</tr>
+		</thead>
+		<tbody id = "wifi_table_body">
+			<tr>
+				<td colspan="17"> 
+					<p style="text-align:center;">위치 정보를 입력한 후에 조회해 주세요<p>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<script>
+		$(document).ready(function() {
+	        // AJAX를 통해 JSP 파일의 내용을 가져와서 삽입
+	        $.ajax({
+	            url: "condition_tag.jsp",
+	            type: "GET",
+	            success: function(data) {
+	                $("#condition_tag").html(data);
+	            },
+	            error: function(xhr, status, error) {
+	                console.error("Failed to load condition_tag.jsp:", status, error);
+	            }
+	        });
+	    });
+		
+		document.getElementById("search_mylocation").addEventListener("click", function() {
+	          // 클릭 이벤트 처리 등
+        	var xhr = new XMLHttpRequest();
+		    xhr.open("GET", "/mylocation_history", true);
+		    xhr.onreadystatechange = function() {
+		        if (xhr.readyState === 4 && xhr.status === 200) {
+		            // 서버에서 새로운 데이터를 받아옴
+		            var newData = JSON.parse(xhr.responseText);
+		            
+		            if(newData.data.lat != null || newData.data.lnt != null) {
+		            	document.getElementById("lat").value = newData.data.lat;
+			            document.getElementById("lnt").value = newData.data.lnt;
+		            } else {
+		            	document.getElementById("lat").value = 0;
+			            document.getElementById("lnt").value = 0;
+		            }
+		            
+		        }
+		    };
+		 	xhr.send();
+		 	
+			
+		  	
+		});
+		
+		document.getElementById("search_wifi_info").addEventListener("click", function() {
+			var lat = document.getElementById("lat").value;
+            var lnt = document.getElementById("lnt").value;
+
+            if(lat == null || lat == 0 || lnt == 0 || lnt == null ){
+				alert("LAT, LNT 를 입력 바랍니다. ")
+				return ;
+            }
+            
+            
+            var url = "/wifi_location?lat=" + encodeURIComponent(lat) + "&lnt=" + encodeURIComponent(lnt);
+
+            // 클릭 이벤트 처리 등
+        	var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+		    xhr.onreadystatechange = function() {
+		        if (xhr.readyState === 4 && xhr.status === 200) {
+		            // 서버에서 새로운 데이터를 받아옴
+		            var newData = JSON.parse(xhr.responseText);
+		            
+		            // 받아온 데이터를 이용하여 테이블을 업데이트
+		            updateTable(newData);
+		        }
+		    };
+		 	xhr.send();
+		 	
+        });
+	    
+		
+		function updateTable(data) {
+			var tableBody = $("#wifi_table_body");
+            tableBody.empty(); // 기존 테이블 내용 비우기
+
+            if(data.data != null) {
+	            $.each(data.data, function(index, item) {
+	                var row = $("<tr></tr>");
+	                var columns = [
+	                    "dis_tinct", "mgr_no", "wrdofc", "main_nm", "adres1", "adres2",
+	                    "instl_floor", "instl_ty", "instl_mby", "svc_se", "cmcwr", "cnstc_year",
+	                    "inout_door", "remars3", "lnt", "lat", "str_work_dttm"
+	                ];
+	
+	                $.each(columns, function(i, column) {
+	                	var cell = $("<td></td>");
+	                    if (column === "main_nm") {
+	                        // main_nm 컬럼일 경우 링크를 추가
+	                        var link = "<a href='list_wifi_location_detail.jsp?mgr_no=" + encodeURIComponent(item['mgr_no']) + "&dis_tinct=" + encodeURIComponent(item['dis_tinct']) + "'>" + item[column] + "</a>";
+	                        cell.html(link);
+	                    } else {
+	                        cell.text(item[column] || ""); // 빈 값 처리를 위해 || "" 추가
+	                    }
+	                    row.append(cell);
+	                    
+	                });
+	
+	                tableBody.append(row);
+	            });
+            }		    
+		}
+		
+	</script>
+</body>
+</html>
